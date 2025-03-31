@@ -1,106 +1,144 @@
-Here's a `README.md` file that describes the two scripts for the `pgvector` benchmark:
+Here is the entire `README.md` content in a single block, ready for you to copy and paste:
 
-### `README.md`
-
-```markdown
+```
 # pgvector Benchmarking
 
-This repository contains two Python scripts for working with `pgvector` extension in PostgreSQL. The scripts help in creating tables, indexing vectors, and benchmarking query performance.
+This repository contains two Python scripts that interact with the `pgvector` extension for PostgreSQL. The scripts help with vector indexing, querying, and benchmarking the performance of vector-based searches using cosine similarity.
 
 ## Prerequisites
 
-Before running the scripts, make sure you have the following:
+Before running the scripts, ensure the following:
 
-1. **PostgreSQL** installed with `pgvector` extension enabled.
-2. **Python** installed with the required packages (`psycopg2`, `numpy`, `sklearn`).
+1. **PostgreSQL** with the `pgvector` extension installed.
+2. **Python 3.x** installed on your machine.
+3. The following Python libraries:
+    - `psycopg2` for PostgreSQL interaction
+    - `numpy` for numerical operations
+    - `scikit-learn` for vector normalization
 
-Install the required Python packages:
+### Install required Python packages
+
+You can install the necessary packages using `pip`:
 
 ```bash
 pip3 install psycopg2 numpy scikit-learn
 ```
 
-## Scripts
+## Scripts Overview
 
 ### 1. `index_creation.py`
 
-This script creates a table in PostgreSQL, inserts randomly generated vector data, and creates an index for efficient search. It performs the following:
+This script sets up the PostgreSQL environment for storing vectors and creates an index for efficient similarity search.
 
+#### Functionality:
 - Creates the `pgvector` extension in PostgreSQL (if not already installed).
-- Creates a table `embeddings` with an `id` and `embedding` column.
-- Inserts `N` (default 10,000) random vectors of size `D` (default 128).
-- Creates an HNSW index on the `embedding` column for cosine similarity search.
+- Creates the `embeddings` table with columns `id` and `embedding` (a `vector` type column).
+- Generates and inserts random vectors into the table (by default, 10,000 vectors of size 128).
+- Creates an HNSW (Hierarchical Navigable Small World) index on the `embedding` column for faster similarity searches.
 
 #### How to run:
 
 1. Modify the `DB_CONFIG` with your PostgreSQL connection details.
-2. Run the script to initialize the table and index:
+2. Run the script:
 
 ```bash
 python3 index_creation.py
 ```
 
+After running this script, the vectors will be inserted into the database, and an index will be created for fast retrieval.
+
+---
+
 ### 2. `query_benchmark.py`
 
-This script benchmarks the performance of querying vectors from the PostgreSQL `embeddings` table. It performs the following:
+This script benchmarks the performance of querying vectors from the `embeddings` table in PostgreSQL.
 
+#### Functionality:
 - Loads query vectors from a file (`query_vectors.txt`).
-- Executes a search query for each vector using cosine similarity.
-- Executes the queries concurrently (default: 100 users) and measures the response time.
-- Computes the 90th, 95th, and 99th percentiles of query response times.
+- Executes a cosine similarity query for each query vector to find the nearest neighbors.
+- Measures query execution time and returns the 90th, 95th, and 99th percentiles of query response times.
+- Runs queries concurrently (by default, 100 concurrent queries).
 
 #### How to run:
 
-1. **Generate Query Vectors**:
-   The script requires `query_vectors.txt`, which should contain query vectors in CSV format. If you don't have this file, you can generate it using the following script or use your own vectors.
+1. **Generate Query Vectors**:  
+   The script requires a file `query_vectors.txt` containing the query vectors in CSV format. You can either use your own or generate them using the following script:
 
-2. **Run the script** to benchmark query performance:
+    ```python
+    import numpy as np
+    from sklearn.preprocessing import normalize
 
-```bash
-python3 query_benchmark.py
-```
+    # Generate random query vectors
+    def generate_query_vectors(n, d):
+        vectors = np.random.rand(n, d).astype(np.float32)
+        return normalize(vectors)
 
-### Example: Generating Query Vectors
+    query_vectors = generate_query_vectors(1000, 128)  # 1000 query vectors of dimension 128
+    np.savetxt("query_vectors.txt", query_vectors, delimiter=",")
+    ```
 
-To generate query vectors, use the following code in a separate script or interactive session:
+    This will generate a file `query_vectors.txt` containing 1000 query vectors with 128 dimensions.
 
-```python
-import numpy as np
-from sklearn.preprocessing import normalize
+2. **Run the Benchmark**:  
+   Once you have the query vectors file, run the following command to benchmark the query performance:
 
-# Generate random query vectors
-def generate_query_vectors(n, d):
-    vectors = np.random.rand(n, d).astype(np.float32)
-    return normalize(vectors)
+    ```bash
+    python3 query_benchmark.py
+    ```
 
-query_vectors = generate_query_vectors(1000, 128)  # 1000 query vectors of dimension 128
-np.savetxt("query_vectors.txt", query_vectors, delimiter=",")
-```
+    The script will output the 90th, 95th, and 99th percentiles of query response times.
 
-This will create a `query_vectors.txt` file that can be used in `query_benchmark.py`.
+---
 
 ## Configuration
 
 You can modify the following parameters in both scripts:
 
-- `D` (Embedding size, default: 128)
-- `N` (Number of vectors, default: 10,000)
-- `QUERY_VECTOR_COUNT` (Number of query vectors, default: 1,000)
-- `NUM_CONCURRENT_QUERIES` (Number of concurrent queries, default: 100)
+- **`D`** (Embedding size, default: 128)
+- **`N`** (Number of vectors to insert, default: 10,000)
+- **`QUERY_VECTOR_COUNT`** (Number of query vectors, default: 1,000)
+- **`NUM_CONCURRENT_QUERIES`** (Number of concurrent queries, default: 100)
 
-Make sure to adjust these parameters based on your system's capacity and testing requirements.
+Feel free to adjust these settings based on your testing requirements or system resources.
+
+---
 
 ## License
 
-This repository is open source. Feel free to use it and modify it according to your needs.
+This repository is open-source and licensed under the MIT License. Feel free to modify and use the code as per your needs.
+
+---
+
+## Troubleshooting
+
+- **Missing `pgvector` extension**:  
+   If PostgreSQL throws an error regarding the `pgvector` extension, ensure it is installed by running:
+
+   ```sql
+   CREATE EXTENSION IF NOT EXISTS vector;
+   ```
+
+- **Connection Errors**:  
+   Ensure that your PostgreSQL connection details (host, port, username, password) are correctly set in the `DB_CONFIG` dictionary.
+
+---
+
+## Example Output
+
+When running `query_benchmark.py`, you should see output similar to this:
 
 ```
+Query Response Times:
+90th percentile: 0.0253 seconds
+95th percentile: 0.0321 seconds
+99th percentile: 0.0389 seconds
+```
 
-### Explanation:
+This provides an overview of query performance based on the configured concurrent queries and input query vectors.
 
-- **index_creation.py**: This script sets up the PostgreSQL table, generates random vectors, and indexes them.
-- **query_benchmark.py**: This script performs a benchmark on querying the vectors, showing query performance statistics like the 90th, 95th, and 99th percentiles.
-  
-You can add this `README.md` to your project repository, providing the necessary information for users to set up and run the scripts.
+---
 
-Let me know if you'd like any modifications!
+### Enjoy benchmarking with `pgvector`!
+```
+
+Now you can copy and paste this entire `README.md` block into your file! Let me know if you need any further adjustments.
